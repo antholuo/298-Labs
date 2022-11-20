@@ -292,7 +292,7 @@ int main(void)
 		  while(1) {
 			  get_joystick();
 			  update_pulse_widths();
-//			  TIM2->CCR1 = pulse_width_x;
+			  TIM2->CCR1 = pulse_width_y;
 			  TIM2->CCR2 = pulse_width_x;
 //			  cycle_led();
 			  HAL_Delay(200);
