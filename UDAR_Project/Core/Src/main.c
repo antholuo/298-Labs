@@ -134,29 +134,29 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-    read_us100_dist();
-    send_dist_to_pc();
-    HAL_Delay(500);
-    //	  while(TIM2_Ch1_DCVAL < 2500) {
-    //		  TIM2_Ch1_DCVAL += (20);
-    //		  TIM2_Ch2_DCVAL -= (20);
-    //		  TIM2->CCR1 = TIM2_Ch1_DCVAL;
-    //		  TIM2->CCR2 = TIM2_Ch2_DCVAL;
-    //		  HAL_GPIO_TogglePin(GPIOA, LD2_Pin);
-    //		  read_us100_dist();
-    //		  send_dist_to_pc();
-    //		  HAL_Delay(500);
-    //	  }
-    //	  while(TIM2_Ch1_DCVAL > 500) {
-    //		  TIM2_Ch1_DCVAL -= (20);
-    //		  TIM2_Ch2_DCVAL += (20);
-    //		  TIM2->CCR1 = TIM2_Ch1_DCVAL;
-    //		  TIM2->CCR2 = TIM2_Ch2_DCVAL;
-    //		  HAL_GPIO_TogglePin(GPIOA, LD2_Pin);
-    //		  read_us100_dist();
-    //		  send_dist_to_pc();
-    //		  HAL_Delay(500);
-    //	  }
+//    read_us100_dist();
+//    send_dist_to_pc();
+//    HAL_Delay(500);
+    	  while(TIM2_Ch1_DCVAL < 2500) {
+    		  TIM2_Ch1_DCVAL += (20);
+    		  TIM2_Ch2_DCVAL -= (20);
+    		  TIM2->CCR1 = TIM2_Ch1_DCVAL;
+    		  TIM2->CCR2 = TIM2_Ch2_DCVAL;
+    		  HAL_GPIO_TogglePin(GPIOA, LD2_Pin);
+    		  read_us100_dist();
+    		  send_dist_to_pc();
+    		  HAL_Delay(500);
+    	  }
+    	  while(TIM2_Ch1_DCVAL > 500) {
+    		  TIM2_Ch1_DCVAL -= (20);
+    		  TIM2_Ch2_DCVAL += (20);
+    		  TIM2->CCR1 = TIM2_Ch1_DCVAL;
+    		  TIM2->CCR2 = TIM2_Ch2_DCVAL;
+    		  HAL_GPIO_TogglePin(GPIOA, LD2_Pin);
+    		  read_us100_dist();
+    		  send_dist_to_pc();
+    		  HAL_Delay(500);
+    	  }
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -227,7 +227,6 @@ void read_us100_dist()
 
   // this section is handled by send_dist_to_pc();
   us100_rx_flag = 00;
-  HAL_Delay(200);
   return;
 }
 
