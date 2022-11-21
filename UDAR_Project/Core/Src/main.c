@@ -91,6 +91,7 @@ void send_dist_to_pc();
 void step_servo_pulse_width(int amount);
 void get_joystick();
 void update_pulse_widtsh();
+void toggle_laser(int state);
 
 void cycle_led();
 
@@ -277,6 +278,9 @@ int main(void)
   TIM2->ARR = 20000 - 1;
   TIM2->CCR1 = TIM2_Ch1_DCVAL;
   TIM2->CCR2 = TIM2_Ch2_DCVAL;
+
+
+  toggle_laser(0);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -285,6 +289,7 @@ int main(void)
   {
 	  if(HAL_GPIO_ReadPin(B1_GPIO_Port, B1_Pin) == 0) {
 		  cycle_led();
+		  toggle_laser(1);
 		  HAL_GPIO_TogglePin(GPIOA, LD2_Pin);
 		  HAL_Delay(500);
 		  TIM2->CCR1 = pulse_width_x;
@@ -512,6 +517,16 @@ void update_pulse_widths() {
 
 	// bound checking
 
+}
+
+void toggle_laser(int state) {
+	if (state == 1) {
+		// on
+		  HAL_GPIO_WritePin(LASERn_GPIO_Port, LASERn_Pin, GPIO_PIN_SET);
+	} else {
+		// off
+		  HAL_GPIO_WritePin(LASERn_GPIO_Port, LASERn_Pin, GPIO_PIN_RESET);
+	}
 }
 /* USER CODE END 4 */
 

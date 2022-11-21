@@ -60,8 +60,8 @@ all: main-build
 main-build: b5_us100.elf secondary-outputs
 
 # Tool invocations
-b5_us100.elf b5_us100.map: $(OBJS) $(USER_OBJS) N:\ECE298\298\ Labs\b5_us100\STM32F401RETX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "b5_us100.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"N:\ECE298\298 Labs\b5_us100\STM32F401RETX_FLASH.ld" --specs=nosys.specs -Wl,-Map="b5_us100.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+b5_us100.elf b5_us100.map: $(OBJS) $(USER_OBJS) D:\Code\298-Labs\b5_us100\STM32F401RETX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "b5_us100.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"D:\Code\298-Labs\b5_us100\STM32F401RETX_FLASH.ld" --specs=nosys.specs -Wl,-Map="b5_us100.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
