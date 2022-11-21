@@ -101,6 +101,8 @@ void send_calibrated();
 void cycle_led();
 void set_led(int col);
 
+int jump(int A, int B);
+
 void ADC_Select_CH();
 /* USER CODE END 0 */
 
@@ -185,9 +187,71 @@ int main(void)
     HAL_Delay(500);
   }
 
+  // we are not in manual mode, so we are in automatic mode
+
+  /* setup for automatic mode */
+  TIM2->CCR = 500;
+  int average = 0;
+  int meas[3] = 0;
+  int num_objs = 0;
+  int obj_detected = 0;
+  int rising_edge;
+  int falling_edge;
+  int num_samples = 0;
+  int avg_distance = 0;
+
   while (automatic_mode)
   {
-    HAL_Delay(500);
+	  /* increment the sensor */
+	TIM2->CCR = pulse_width_x;
+
+	/* compute avg of prev 3 measurements avg's */
+	average = (meas[0] + meas[1] + meas[2]) / 3;
+
+	/* compute avg of current measurement */
+	read_us100_dist();
+	int dist1 = distance;
+	read_us100_dist();
+	int dist2 = distance;
+	read_us100_dist();
+	int dist3 = distance;
+
+	int dist_avg = (dist1+dist2+dist3)/3;
+
+	/* check for significant jump */
+
+	if (jump(average, dist_avg)) {
+		// set led red
+		// set object = 1
+		if (obj_detected) {
+			falling_edge = pulse_width_x;
+			num_objs += 1;
+			obj_detected = 0;
+		} else {
+			rising_edge = pulse_width_x;
+			obj_detected = 1;
+		}
+	}
+
+
+	/* log information */
+	if (obj_detected) {
+
+	}
+	// rising edge
+	// falling edge
+	// average distance?
+
+	/*
+	 * angular width = rising - falling - 211
+	 * centerline (microseconds) = avg(rising, falling) - [(pb1+pb2)/2-1500]
+	 */
+
+    HAL_Delay(200);
+    pulse_width_x += 20;
+    if (pulse_width_x >= 2500) {
+    	break;
+    }
   }
   /* USER CODE END WHILE */
 
@@ -596,6 +660,17 @@ void send_bearing_and_distance()
   sprintf((char *)msg_buffer, "\r\n Bearing = %d degrees, Distance Sensed (mm)= %d", deg, distance); // set up the report content                                                       // this is just used to slow down the sequence (user determined)
   HAL_UART_Transmit(&huart6, msg_buffer, strlen((char *)msg_buffer), 500);                           // send out the report
   return;
+}
+
+int jump(int A, int B) {
+	int ratio = A / B;
+	if (ratio < -1.2) {
+		return 1; // jump
+	} else if (ratio > 1.2) {
+		return 1; // jump
+	} else {
+		return 0;
+	}
 }
 /* USER CODE END 4 */
 
