@@ -92,8 +92,11 @@ void read_us100_dist();
 void send_dist_to_pc();
 void step_servo_pulse_width(int amount);
 void get_joystick();
-void update_pulse_widtsh();
+void update_pulse_widths();
 void toggle_laser(int state);
+
+void send_bearing_and_distance();
+void send_calibrated();
 
 void cycle_led();
 void set_led(int col);
@@ -135,8 +138,8 @@ int main(void)
   MX_USART6_UART_Init();
   MX_ADC1_Init();
   /* USER CODE BEGIN 2 */
-  int TIM2_Ch1_DCVAL = 500;
-  int TIM2_Ch2_DCVAL = 2500;
+  int TIM2_Ch1_DCVAL = 1500;
+  int TIM2_Ch2_DCVAL = 1500;
   pulse_width = 1500;
 
   HAL_TIM_Base_Start(&htim2);
@@ -149,33 +152,46 @@ int main(void)
   TIM2->CCR2 = TIM2_Ch2_DCVAL;
 
   toggle_laser(0);
+
+  /* startup code */
+  int manual_mode = 0;
+  int automatic_mode = 0;
+  if (HAL_GPIO_ReadPin(B1_GPIO_Port, B1_Pin) == 0)
+  {
+    manual_mode = 1;
+    HAL_GPIO_WritePin(GPIOA, LD2_Pin, GPIO_PIN_RESET);
+    toggle_laser(1);
+  }
+  else
+  {
+    automatic_mode = 1;
+    HAL_GPIO_WritePin(GPIOA, LD2_Pin, GPIO_PIN_SET);
+    toggle_laser(0);
+  }
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  while (1)
+  while (manual_mode)
   {
-    if (HAL_GPIO_ReadPin(B1_GPIO_Port, B1_Pin) == 0)
-    {
-      cycle_led();
-      toggle_laser(1);
-      HAL_GPIO_TogglePin(GPIOA, LD2_Pin);
-      HAL_Delay(500);
-      TIM2->CCR1 = pulse_width_x;
-      TIM2->CCR2 = pulse_width_y;
-      while (1)
-      {
-        get_joystick();
-        TIM2->CCR1 = pulse_width_y;
-        TIM2->CCR2 = pulse_width_x;
-        //			  cycle_led();
-        HAL_Delay(200);
-      }
-    }
-    /* USER CODE END WHILE */
-
-    /* USER CODE BEGIN 3 */
+    cycle_led();
+    read_us100_dist();
+    get_joystick();
+    update_pulse_widths();
+    TIM2->CCR1 = pulse_width_y;
+    TIM2->CCR2 = pulse_width_x;
+    // send bearing and distance to computer
+    send_bearing_and_distance();
+    HAL_Delay(500);
   }
+
+  while (automatic_mode)
+  {
+    HAL_Delay(500);
+  }
+  /* USER CODE END WHILE */
+
+  /* USER CODE BEGIN 3 */
   /* USER CODE END 3 */
 }
 
@@ -563,6 +579,23 @@ void ADC_Select_CH(int CH)
     }
     break;
   }
+}
+
+void send_bearing_and_distance()
+{
+  int min_pw = 500;
+  int max_pw = 2500;
+
+  int min_deg = -90;
+  int max_deg = 90;
+
+  // acc deg = (max_deg - min_deg) / (max_pw - min_pw) * pw - 135?
+
+  int deg = -(((9 * pulse_width_x) / 100) - 135);
+
+  sprintf((char *)msg_buffer, "\r\n Bearing = %d degrees, Distance Sensed (mm)= %d", deg, distance); // set up the report content                                                       // this is just used to slow down the sequence (user determined)
+  HAL_UART_Transmit(&huart6, msg_buffer, strlen((char *)msg_buffer), 500);                           // send out the report
+  return;
 }
 /* USER CODE END 4 */
 
