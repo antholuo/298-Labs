@@ -103,6 +103,7 @@ void cycle_led();
 void set_led(int col);
 
 int jump(int A, int B);
+int get_us100_3meas_avg();
 
 void print_automatic_mode_header();
 
@@ -207,11 +208,17 @@ int main(void)
   int angular_width_ticks = 0;
   int centerline_ticks = 0;
   int prev;
+  us100_rx_flag = 0;
 
   HAL_Delay(500);
+  set_led(RGB_RED);
+  HAL_Delay(100);
+  set_led(RGB_BLU);
 
   print_automatic_mode_header();
-  read_us100_dist();
+  HAL_GPIO_WritePin(GPIOA, LD2_Pin, GPIO_PIN_SET);
+  distance = get_us100_3meas_avg();
+  HAL_Delay(100);
   set_led(RGB_GRN);
   while (automatic_mode)
   {
@@ -220,14 +227,16 @@ int main(void)
     prev = distance;
 
     /* compute avg of current measurement */
-    read_us100_dist();
+    distance = get_us100_3meas_avg();
+//    set_led(RGB_RED);
+
+    send_bearing_and_distance();
+//    set_led(RGB_BLU);
 
     /* check for significant jump */
 
     if (jump(prev, distance))
     {
-      // set led red
-      // set object = 1
       if (obj_detected)
       {
         falling_edge = pulse_width_x;
@@ -243,10 +252,10 @@ int main(void)
          */
         angular_width_ticks = rising_edge - falling_edge - 211;
         centerline_ticks = (rising_edge + falling_edge) / 2 + 20;
-        avg_distance = avg_distance / num_samples;
+        avg_distance = (avg_distance / num_samples) + 50;
 
         /* convert to degrees */
-        int bearing_center = -(((9 * centerline_ticks) / 100) - 135);
+        int bearing_center = (((9 * centerline_ticks) / 100) - 135);
         int angular_width = abs(9 * angular_width_ticks / 100);
         sprintf((char *)msg_buffer, "\r\n%d,\t%d\t%d\t%d", num_objs, bearing_center, avg_distance, angular_width);
         HAL_UART_Transmit(&huart6, msg_buffer, strlen((char *)msg_buffer), 500);
@@ -263,7 +272,7 @@ int main(void)
           toggle_laser(0);
           HAL_Delay(200);
         }
-        toggle_laser(1); // keep laser on for rest of scanning
+        toggle_laser(0); // keep laser off for rest of scanning
       }
       else
       {
@@ -281,13 +290,14 @@ int main(void)
       num_samples += 1;
     }
 
-    HAL_Delay(200);
+    HAL_Delay(400);
     pulse_width_x += 20;
     if (pulse_width_x >= 2500)
     {
       break;
     }
   }
+  toggle_laser(0);
   set_led(RGB_BLU);
   /* USER CODE END WHILE */
 
@@ -402,7 +412,7 @@ void cycle_led()
     // all off
     // turn RED on
     /*Configure GPIO pin Output Level */
-    HAL_GPIO_WritePin(GPIOA, LD2_Pin | BLU_Pin | GRN_Pin | RED_Pin, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(GPIOA, BLU_Pin | GRN_Pin | RED_Pin, GPIO_PIN_RESET);
 
     /*Configure GPIO pin Output Level */
     HAL_GPIO_WritePin(GPIOA, RED_Pin, GPIO_PIN_SET);
@@ -412,7 +422,7 @@ void cycle_led()
     // red on
     // turn GRN on
     /*Configure GPIO pin Output Level */
-    HAL_GPIO_WritePin(GPIOA, LD2_Pin | BLU_Pin | GRN_Pin | RED_Pin, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(GPIOA, BLU_Pin | GRN_Pin | RED_Pin, GPIO_PIN_RESET);
 
     /*Configure GPIO pin Output Level */
     HAL_GPIO_WritePin(GPIOA, GRN_Pin, GPIO_PIN_SET);
@@ -422,7 +432,7 @@ void cycle_led()
     // grn on
     // turn BLU on
     /*Configure GPIO pin Output Level */
-    HAL_GPIO_WritePin(GPIOA, LD2_Pin | BLU_Pin | GRN_Pin | RED_Pin, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(GPIOA, BLU_Pin | GRN_Pin | RED_Pin, GPIO_PIN_RESET);
 
     /*Configure GPIO pin Output Level */
     HAL_GPIO_WritePin(GPIOA, BLU_Pin, GPIO_PIN_SET);
@@ -432,7 +442,7 @@ void cycle_led()
     // blu on
     // turn RED on
     /*Configure GPIO pin Output Level */
-    HAL_GPIO_WritePin(GPIOA, LD2_Pin | BLU_Pin | GRN_Pin | RED_Pin, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(GPIOA, BLU_Pin | GRN_Pin | RED_Pin, GPIO_PIN_RESET);
 
     /*Configure GPIO pin Output Level */
     HAL_GPIO_WritePin(GPIOA, RED_Pin, GPIO_PIN_SET);
@@ -448,7 +458,7 @@ void set_led(int col)
   case 0:
     // turn RED on
     /*Configure GPIO pin Output Level */
-    HAL_GPIO_WritePin(GPIOA, LD2_Pin | BLU_Pin | GRN_Pin | RED_Pin, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(GPIOA, BLU_Pin | GRN_Pin | RED_Pin, GPIO_PIN_RESET);
 
     /*Configure GPIO pin Output Level */
     HAL_GPIO_WritePin(GPIOA, RED_Pin, GPIO_PIN_SET);
@@ -456,7 +466,7 @@ void set_led(int col)
   case 1:
     // turn GRN on
     /*Configure GPIO pin Output Level */
-    HAL_GPIO_WritePin(GPIOA, LD2_Pin | BLU_Pin | GRN_Pin | RED_Pin, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(GPIOA, BLU_Pin | GRN_Pin | RED_Pin, GPIO_PIN_RESET);
 
     /*Configure GPIO pin Output Level */
     HAL_GPIO_WritePin(GPIOA, GRN_Pin, GPIO_PIN_SET);
@@ -464,7 +474,7 @@ void set_led(int col)
   case 2:
     // turn BLU on
     /*Configure GPIO pin Output Level */
-    HAL_GPIO_WritePin(GPIOA, LD2_Pin | BLU_Pin | GRN_Pin | RED_Pin, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(GPIOA, BLU_Pin | GRN_Pin | RED_Pin, GPIO_PIN_RESET);
 
     /*Configure GPIO pin Output Level */
     HAL_GPIO_WritePin(GPIOA, BLU_Pin, GPIO_PIN_SET);
@@ -683,42 +693,77 @@ void ADC_Select_CH(int CH)
 
 void send_bearing_and_distance()
 {
-  int min_pw = 500;
-  int max_pw = 2500;
-
-  int min_deg = -90;
-  int max_deg = 90;
-
   // acc deg = (max_deg - min_deg) / (max_pw - min_pw) * pw - 135?
 
-  int deg = -(((9 * pulse_width_x) / 100) - 135);
+  int deg = (((9 * pulse_width_x) / 100) - 135);
 
-  sprintf((char *)msg_buffer, "\r\n Bearing = %d degrees, Distance Sensed (mm)= %d", deg, distance); // set up the report content                                                       // this is just used to slow down the sequence (user determined)
+  sprintf((char *)msg_buffer, "\r\n Bearing = %d degrees, Distance Sensed (mm)= %d", deg, distance+50); // set up the report content                                                       // this is just used to slow down the sequence (user determined)
   HAL_UART_Transmit(&huart6, msg_buffer, strlen((char *)msg_buffer), 500);                           // send out the report
   return;
 }
 
 int jump(int A, int B)
 {
-  int ratio = A / B;
-  if (ratio < -1.2)
+  if (abs(A - B) > 60)
   {
-    return 1; // jump
+	  sprintf((char *)msg_buffer, "\r\n Jump detected"); // set up the report content                                                       // this is just used to slow down the sequence (user determined)
+	    HAL_UART_Transmit(&huart6, msg_buffer, strlen((char *)msg_buffer), 500);
+    return 1;
   }
-  else if (ratio > 1.2)
-  {
-    return 1; // jump
-  }
-  else
-  {
-    return 0;
-  }
+  return 0;
 }
 
 void print_automatic_mode_header()
 {
-  sprintf((char *)msg_buffer, "\r\n LS004 Team08,\tCalibrated FOV ,\tFOV Centerline correction (degrees)\nObject:(n),\t Bearing to Object CENTER: (degrees),\tDISTANCE: to Object (mm),\tObject Angular Width:(degrees)"); // set up the report content                                                       // this is just used to slow down the sequence (user determined)
+  sprintf((char *)msg_buffer, "\r\n LS004 Team08,\tCalibrated FOV ,\tFOV Centerline correction (degrees)\r\nObject:(n),\t Bearing to Object CENTER: (degrees),\tDISTANCE: to Object (mm),\tObject Angular Width:(degrees)"); // set up the report content                                                       // this is just used to slow down the sequence (user determined)
   HAL_UART_Transmit(&huart6, msg_buffer, strlen((char *)msg_buffer), 500);                                                                                                                                                 // send out the report
+}
+
+int get_us100_3meas_avg()
+{
+  int total = 0;
+  HAL_UART_Receive_IT(&huart1, &us100_buffer, 2); // get the UART Receiver ready to receive data and then generate an interrupt
+  HAL_UART_Transmit(&huart1, &cmd_dist, 1, 500);  // send out the command to the US-100 (TRIG Input)
+
+  while (us100_rx_flag == (00))
+  {
+  }; // wait for the Flag to be set by the Interrupt Callback routine
+
+  total += (us100_buffer[0] << 8) + us100_buffer[1]; // convert the two indivual byts into a single 16 bit quantity
+
+  // this section is handled by send_dist_to_pc();
+  us100_rx_flag = 00;
+
+  HAL_Delay(50);
+
+  HAL_UART_Receive_IT(&huart1, &us100_buffer, 2); // get the UART Receiver ready to receive data and then generate an interrupt
+  HAL_UART_Transmit(&huart1, &cmd_dist, 1, 500);  // send out the command to the US-100 (TRIG Input)
+
+  while (us100_rx_flag == (00))
+  {
+  }; // wait for the Flag to be set by the Interrupt Callback routine
+
+  total += (us100_buffer[0] << 8) + us100_buffer[1]; // convert the two indivual byts into a single 16 bit quantity
+
+  // this section is handled by send_dist_to_pc();
+  us100_rx_flag = 00;
+
+  HAL_Delay(50);
+
+  HAL_UART_Receive_IT(&huart1, &us100_buffer, 2); // get the UART Receiver ready to receive data and then generate an interrupt
+  HAL_UART_Transmit(&huart1, &cmd_dist, 1, 500);  // send out the command to the US-100 (TRIG Input)
+
+  while (us100_rx_flag == (00))
+  {
+  }; // wait for the Flag to be set by the Interrupt Callback routine
+
+  total += (us100_buffer[0] << 8) + us100_buffer[1]; // convert the two indivual byts into a single 16 bit quantity
+
+  // this section is handled by send_dist_to_pc();
+  us100_rx_flag = 00;
+
+  total = total / 3;
+  return total;
 }
 /* USER CODE END 4 */
 
