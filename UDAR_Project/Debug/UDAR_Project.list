@@ -1090,7 +1090,7 @@ int main(void)
  8000992:	627b      	str	r3, [r7, #36]	; 0x24
 
         /* convert to degrees */
-        int bearing_center =  -(((9 * centerline_ticks) / 100) - 135);
+        int bearing_center = -(((9 * centerline_ticks) / 100) - 135);
  8000994:	697a      	ldr	r2, [r7, #20]
  8000996:	4613      	mov	r3, r2
  8000998:	00db      	lsls	r3, r3, #3
@@ -1102,7 +1102,7 @@ int main(void)
  80009a6:	1a9b      	subs	r3, r3, r2
  80009a8:	3387      	adds	r3, #135	; 0x87
  80009aa:	60bb      	str	r3, [r7, #8]
-        int angular_width = abs(9*angular_width_ticks/100);
+        int angular_width = abs(9 * angular_width_ticks / 100);
  80009ac:	69ba      	ldr	r2, [r7, #24]
  80009ae:	4613      	mov	r3, r2
  80009b0:	00db      	lsls	r3, r3, #3
@@ -1126,7 +1126,7 @@ int main(void)
  80009d4:	4925      	ldr	r1, [pc, #148]	; (8000a6c <main+0x264>)
  80009d6:	4826      	ldr	r0, [pc, #152]	; (8000a70 <main+0x268>)
  80009d8:	f004 fa8a 	bl	8004ef0 <siprintf>
-          HAL_UART_Transmit(&huart6, msg_buffer, strlen((char *)msg_buffer), 500);
+        HAL_UART_Transmit(&huart6, msg_buffer, strlen((char *)msg_buffer), 500);
  80009dc:	4824      	ldr	r0, [pc, #144]	; (8000a70 <main+0x268>)
  80009de:	f7ff fbff 	bl	80001e0 <strlen>
  80009e2:	4603      	mov	r3, r0
@@ -2409,7 +2409,7 @@ void print_automatic_mode_header()
  80011d8:	4908      	ldr	r1, [pc, #32]	; (80011fc <print_automatic_mode_header+0x28>)
  80011da:	4809      	ldr	r0, [pc, #36]	; (8001200 <print_automatic_mode_header+0x2c>)
  80011dc:	f003 fe88 	bl	8004ef0 <siprintf>
-  HAL_UART_Transmit(&huart6, msg_buffer, strlen((char *)msg_buffer), 500);                                  // send out the report
+  HAL_UART_Transmit(&huart6, msg_buffer, strlen((char *)msg_buffer), 500);                                                                                                                                                 // send out the report
  80011e0:	4807      	ldr	r0, [pc, #28]	; (8001200 <print_automatic_mode_header+0x2c>)
  80011e2:	f7fe fffd 	bl	80001e0 <strlen>
  80011e6:	4603      	mov	r3, r0

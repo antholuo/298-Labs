@@ -238,10 +238,10 @@ int main(void)
         avg_distance = avg_distance / num_samples;
 
         /* convert to degrees */
-        int bearing_center =  -(((9 * centerline_ticks) / 100) - 135);
-        int angular_width = abs(9*angular_width_ticks/100);
+        int bearing_center = -(((9 * centerline_ticks) / 100) - 135);
+        int angular_width = abs(9 * angular_width_ticks / 100);
         sprintf((char *)msg_buffer, "\r\n%d,\t%d\t%d\t%d", num_objs, bearing_center, avg_distance, angular_width);
-          HAL_UART_Transmit(&huart6, msg_buffer, strlen((char *)msg_buffer), 500);
+        HAL_UART_Transmit(&huart6, msg_buffer, strlen((char *)msg_buffer), 500);
       }
       else
       {
@@ -693,7 +693,7 @@ int jump(int A, int B)
 void print_automatic_mode_header()
 {
   sprintf((char *)msg_buffer, "\r\n LS004 Team08,\tCalibrated FOV ,\tFOV Centerline correction (degrees)\nObject:(n),\t Bearing to Object CENTER: (degrees),\tDISTANCE: to Object (mm),\tObject Angular Width:(degrees)"); // set up the report content                                                       // this is just used to slow down the sequence (user determined)
-  HAL_UART_Transmit(&huart6, msg_buffer, strlen((char *)msg_buffer), 500);                                  // send out the report
+  HAL_UART_Transmit(&huart6, msg_buffer, strlen((char *)msg_buffer), 500);                                                                                                                                                 // send out the report
 }
 /* USER CODE END 4 */
 
