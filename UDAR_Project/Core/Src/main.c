@@ -27,6 +27,7 @@
 /* USER CODE BEGIN Includes */
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -59,8 +60,8 @@ int pulse_width_y = 1500;
 uint8_t rcv_intpt_flag = 0;
 
 /* transmit message buffer */
-uint8_t txd_msg_buffer[64] = {0};
-uint8_t msg_buffer[64] = {0};
+uint8_t txd_msg_buffer[200] = {0};
+uint8_t msg_buffer[200] = {0};
 
 /* cmd to us100 to begin distance sensing */
 uint8_t cmd_dist = {0x55};
@@ -102,6 +103,8 @@ void cycle_led();
 void set_led(int col);
 
 int jump(int A, int B);
+
+void print_automatic_mode_header();
 
 void ADC_Select_CH();
 /* USER CODE END 0 */
@@ -190,67 +193,75 @@ int main(void)
   // we are not in manual mode, so we are in automatic mode
 
   /* setup for automatic mode */
-  TIM2->CCR = 500;
-  int average = 0;
-  int meas[3] = 0;
+  TIM2->CCR1 = 1500;
+  TIM2->CCR2 = 1500;
   int num_objs = 0;
   int obj_detected = 0;
   int rising_edge;
   int falling_edge;
   int num_samples = 0;
   int avg_distance = 0;
+  int angular_width_ticks = 0;
+  int centerline_ticks = 0;
+  int prev;
 
+  print_automatic_mode_header();
+  read_us100_dist();
   while (automatic_mode)
   {
-	  /* increment the sensor */
-	TIM2->CCR = pulse_width_x;
+    /* increment the sensor */
+    TIM2->CCR2 = pulse_width_x;
+    prev = distance;
 
-	/* compute avg of prev 3 measurements avg's */
-	average = (meas[0] + meas[1] + meas[2]) / 3;
+    /* compute avg of current measurement */
+    read_us100_dist();
 
-	/* compute avg of current measurement */
-	read_us100_dist();
-	int dist1 = distance;
-	read_us100_dist();
-	int dist2 = distance;
-	read_us100_dist();
-	int dist3 = distance;
+    /* check for significant jump */
 
-	int dist_avg = (dist1+dist2+dist3)/3;
+    if (jump(prev, distance))
+    {
+      // set led red
+      // set object = 1
+      if (obj_detected)
+      {
+        falling_edge = pulse_width_x;
+        num_objs += 1;
+        obj_detected = 0;
 
-	/* check for significant jump */
+        // print output
+        /*
+         * angular width = rising - falling - 211
+         * centerline (microseconds) = avg(rising, falling) - [(pb1+pb2)/2-1500]
+         */
+        angular_width_ticks = rising_edge - falling_edge - 211;
+        centerline_ticks = (rising_edge + falling_edge) / 2 + 20;
+        avg_distance = avg_distance / num_samples;
 
-	if (jump(average, dist_avg)) {
-		// set led red
-		// set object = 1
-		if (obj_detected) {
-			falling_edge = pulse_width_x;
-			num_objs += 1;
-			obj_detected = 0;
-		} else {
-			rising_edge = pulse_width_x;
-			obj_detected = 1;
-		}
-	}
+        /* convert to degrees */
+        int bearing_center =  -(((9 * centerline_ticks) / 100) - 135);
+        int angular_width = abs(9*angular_width_ticks/100);
+        sprintf((char *)msg_buffer, "\r\n%d,\t%d\t%d\t%d", num_objs, bearing_center, avg_distance, angular_width);
+          HAL_UART_Transmit(&huart6, msg_buffer, strlen((char *)msg_buffer), 500);
+      }
+      else
+      {
+        rising_edge = pulse_width_x;
+        obj_detected = 1;
+      }
+    }
 
-
-	/* log information */
-	if (obj_detected) {
-
-	}
-	// rising edge
-	// falling edge
-	// average distance?
-
-	/*
-	 * angular width = rising - falling - 211
-	 * centerline (microseconds) = avg(rising, falling) - [(pb1+pb2)/2-1500]
-	 */
+    /* log information */
+    if (obj_detected)
+    {
+      avg_distance += distance;
+      num_samples += 1;
+    }
 
     HAL_Delay(200);
     pulse_width_x += 20;
-    if (pulse_width_x >= 2500) {
-    	break;
+    if (pulse_width_x >= 2500)
+    {
+      break;
     }
   }
   /* USER CODE END WHILE */
@@ -662,15 +673,27 @@ void send_bearing_and_distance()
   return;
 }
 
-int jump(int A, int B) {
-	int ratio = A / B;
-	if (ratio < -1.2) {
-		return 1; // jump
-	} else if (ratio > 1.2) {
-		return 1; // jump
-	} else {
-		return 0;
-	}
+int jump(int A, int B)
+{
+  int ratio = A / B;
+  if (ratio < -1.2)
+  {
+    return 1; // jump
+  }
+  else if (ratio > 1.2)
+  {
+    return 1; // jump
+  }
+  else
+  {
+    return 0;
+  }
+}
+
+void print_automatic_mode_header()
+{
+  sprintf((char *)msg_buffer, "\r\n LS004 Team08,\tCalibrated FOV ,\tFOV Centerline correction (degrees)\nObject:(n),\t Bearing to Object CENTER: (degrees),\tDISTANCE: to Object (mm),\tObject Angular Width:(degrees)"); // set up the report content                                                       // this is just used to slow down the sequence (user determined)
+  HAL_UART_Transmit(&huart6, msg_buffer, strlen((char *)msg_buffer), 500);                                  // send out the report
 }
 /* USER CODE END 4 */
 
