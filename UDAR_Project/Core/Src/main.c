@@ -160,7 +160,7 @@ int main(void)
 
   /* startup code */
   int manual_mode = 0;
-  int automatic_mode = 0;
+  int automatic_mode = 1;
   if (HAL_GPIO_ReadPin(B1_GPIO_Port, B1_Pin) == 0)
   {
     manual_mode = 1;
@@ -170,8 +170,10 @@ int main(void)
   else
   {
     automatic_mode = 1;
+    manual_mode = 0;
     HAL_GPIO_WritePin(GPIOA, LD2_Pin, GPIO_PIN_SET);
     toggle_laser(0);
+//    set_led(RGB_GRN);
   }
   /* USER CODE END 2 */
 
@@ -207,6 +209,7 @@ int main(void)
 
   print_automatic_mode_header();
   read_us100_dist();
+  set_led(RGB_GRN);
   while (automatic_mode)
   {
     /* increment the sensor */
@@ -227,6 +230,7 @@ int main(void)
         falling_edge = pulse_width_x;
         num_objs += 1;
         obj_detected = 0;
+        set_led(RGB_GRN);
 
         // print output
         /*
@@ -242,11 +246,15 @@ int main(void)
         int angular_width = abs(9 * angular_width_ticks / 100);
         sprintf((char *)msg_buffer, "\r\n%d,\t%d\t%d\t%d", num_objs, bearing_center, avg_distance, angular_width);
         HAL_UART_Transmit(&huart6, msg_buffer, strlen((char *)msg_buffer), 500);
+
+        avg_distance = 0;
+        num_samples = 0;
       }
       else
       {
         rising_edge = pulse_width_x;
         obj_detected = 1;
+        set_led(RGB_RED);
       }
     }
 
@@ -264,6 +272,7 @@ int main(void)
       break;
     }
   }
+  set_led(RGB_BLU);
   /* USER CODE END WHILE */
 
   /* USER CODE BEGIN 3 */
