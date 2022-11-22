@@ -196,7 +196,8 @@ int main(void)
 
   /* setup for automatic mode */
   TIM2->CCR1 = 1500;
-  TIM2->CCR2 = 1500;
+  TIM2->CCR2 = 500;
+  pulse_width_x = 500;
   int num_objs = 0;
   int obj_detected = 0;
   int rising_edge;
@@ -206,6 +207,8 @@ int main(void)
   int angular_width_ticks = 0;
   int centerline_ticks = 0;
   int prev;
+
+  HAL_Delay(500);
 
   print_automatic_mode_header();
   read_us100_dist();
