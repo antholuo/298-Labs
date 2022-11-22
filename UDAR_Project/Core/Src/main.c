@@ -228,59 +228,56 @@ int main(void)
 
     /* compute avg of current measurement */
     distance = get_us100_3meas_avg();
-//    set_led(RGB_RED);
+    //    set_led(RGB_RED);
 
-    send_bearing_and_distance();
-//    set_led(RGB_BLU);
+    // send_bearing_and_distance();
+    //    set_led(RGB_BLU);
 
     /* check for significant jump */
 
-    if (jump(prev, distance))
+    if (distance < 1000 && obj_detected == 0) // this is the start of the object
     {
-      if (obj_detected)
+      rising_edge = pulse_width_x;
+      obj_detected = 1;
+      set_led(RGB_RED);
+      toggle_laser(1);
+    }
+    if (distance > 1000 && obj_detected == 1) // this is the end of the object
+    {
+      falling_edge = pulse_width_x;
+      num_objs += 1;
+      obj_detected = 0;
+      set_led(RGB_GRN);
+      toggle_laser(0);
+
+      // print output
+      /*
+       * angular width = rising - falling - 211
+       * centerline (microseconds) = avg(rising, falling) - [(pb1+pb2)/2-1500]
+       */
+      angular_width_ticks = rising_edge - falling_edge - 211;
+      centerline_ticks = (rising_edge + falling_edge) / 2 + 20;
+      avg_distance = (avg_distance / num_samples) + 50;
+
+      /* convert to degrees */
+      int bearing_center = (((9 * centerline_ticks) / 100) - 135);
+      int angular_width = abs(9 * angular_width_ticks / 100);
+      sprintf((char *)msg_buffer, "\r\n%d,\t%d\t%d\t%d", num_objs, bearing_center, avg_distance, angular_width);
+      HAL_UART_Transmit(&huart6, msg_buffer, strlen((char *)msg_buffer), 500);
+
+      avg_distance = 0;
+      num_samples = 0;
+
+      TIM2->CCR2 = centerline_ticks;
+      for (int i = 0; i < 3; ++i)
       {
-        falling_edge = pulse_width_x;
-        num_objs += 1;
-        obj_detected = 0;
-        set_led(RGB_GRN);
-        toggle_laser(0);
-
-        // print output
-        /*
-         * angular width = rising - falling - 211
-         * centerline (microseconds) = avg(rising, falling) - [(pb1+pb2)/2-1500]
-         */
-        angular_width_ticks = rising_edge - falling_edge - 211;
-        centerline_ticks = (rising_edge + falling_edge) / 2 + 20;
-        avg_distance = (avg_distance / num_samples) + 50;
-
-        /* convert to degrees */
-        int bearing_center = (((9 * centerline_ticks) / 100) - 135);
-        int angular_width = abs(9 * angular_width_ticks / 100);
-        sprintf((char *)msg_buffer, "\r\n%d,\t%d\t%d\t%d", num_objs, bearing_center, avg_distance, angular_width);
-        HAL_UART_Transmit(&huart6, msg_buffer, strlen((char *)msg_buffer), 500);
-
-        avg_distance = 0;
-        num_samples = 0;
-
-        TIM2->CCR2 = centerline_ticks;
-        for (int i = 0; i < 3; ++i)
-        {
-          /* toggle laser 3 times */
-          toggle_laser(1);
-          HAL_Delay(200);
-          toggle_laser(0);
-          HAL_Delay(200);
-        }
-        toggle_laser(0); // keep laser off for rest of scanning
-      }
-      else
-      {
-        rising_edge = pulse_width_x;
-        obj_detected = 1;
-        set_led(RGB_RED);
+        /* toggle laser 3 times */
         toggle_laser(1);
+        HAL_Delay(200);
+        toggle_laser(0);
+        HAL_Delay(200);
       }
+      toggle_laser(0); // keep laser off for rest of scanning
     }
 
     /* log information */
@@ -697,8 +694,8 @@ void send_bearing_and_distance()
 
   int deg = (((9 * pulse_width_x) / 100) - 135);
 
-  sprintf((char *)msg_buffer, "\r\n Bearing = %d degrees, Distance Sensed (mm)= %d", deg, distance+50); // set up the report content                                                       // this is just used to slow down the sequence (user determined)
-  HAL_UART_Transmit(&huart6, msg_buffer, strlen((char *)msg_buffer), 500);                           // send out the report
+  sprintf((char *)msg_buffer, "\r\n Bearing = %d degrees, Distance Sensed (mm)= %d", deg, distance + 50); // set up the report content                                                       // this is just used to slow down the sequence (user determined)
+  HAL_UART_Transmit(&huart6, msg_buffer, strlen((char *)msg_buffer), 500);                                // send out the report
   return;
 }
 
@@ -706,8 +703,8 @@ int jump(int A, int B)
 {
   if (abs(A - B) > 60)
   {
-	  sprintf((char *)msg_buffer, "\r\n Jump detected"); // set up the report content                                                       // this is just used to slow down the sequence (user determined)
-	    HAL_UART_Transmit(&huart6, msg_buffer, strlen((char *)msg_buffer), 500);
+    sprintf((char *)msg_buffer, "\r\n Jump detected"); // set up the report content                                                       // this is just used to slow down the sequence (user determined)
+    HAL_UART_Transmit(&huart6, msg_buffer, strlen((char *)msg_buffer), 500);
     return 1;
   }
   return 0;
@@ -716,7 +713,7 @@ int jump(int A, int B)
 void print_automatic_mode_header()
 {
   sprintf((char *)msg_buffer, "\r\n LS004 Team08,\tCalibrated FOV ,\tFOV Centerline correction (degrees)\r\nObject:(n),\t Bearing to Object CENTER: (degrees),\tDISTANCE: to Object (mm),\tObject Angular Width:(degrees)"); // set up the report content                                                       // this is just used to slow down the sequence (user determined)
-  HAL_UART_Transmit(&huart6, msg_buffer, strlen((char *)msg_buffer), 500);                                                                                                                                                 // send out the report
+  HAL_UART_Transmit(&huart6, msg_buffer, strlen((char *)msg_buffer), 500);                                                                                                                                                   // send out the report
 }
 
 int get_us100_3meas_avg()
