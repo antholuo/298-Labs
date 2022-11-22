@@ -156,7 +156,7 @@ int main(void)
   TIM2->CCR1 = TIM2_Ch1_DCVAL;
   TIM2->CCR2 = TIM2_Ch2_DCVAL;
 
-  toggle_laser(0);
+  toggle_laser(0); // set laser off
 
   /* startup code */
   int manual_mode = 0;
@@ -173,7 +173,7 @@ int main(void)
     manual_mode = 0;
     HAL_GPIO_WritePin(GPIOA, LD2_Pin, GPIO_PIN_SET);
     toggle_laser(0);
-//    set_led(RGB_GRN);
+    //    set_led(RGB_GRN);
   }
   /* USER CODE END 2 */
 
@@ -234,6 +234,7 @@ int main(void)
         num_objs += 1;
         obj_detected = 0;
         set_led(RGB_GRN);
+        toggle_laser(0);
 
         // print output
         /*
@@ -252,12 +253,24 @@ int main(void)
 
         avg_distance = 0;
         num_samples = 0;
+
+        TIM2->CCR2 = centerline_ticks;
+        for (int i = 0; i < 3; ++i)
+        {
+          /* toggle laser 3 times */
+          toggle_laser(1);
+          HAL_Delay(200);
+          toggle_laser(0);
+          HAL_Delay(200);
+        }
+        toggle_laser(1); // keep laser on for rest of scanning
       }
       else
       {
         rising_edge = pulse_width_x;
         obj_detected = 1;
         set_led(RGB_RED);
+        toggle_laser(1);
       }
     }
 
